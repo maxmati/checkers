@@ -39,8 +39,8 @@ boardToString board = unlines (map (rowToString board) [1..8])
 
 putBoard board = putStr $  boardToString board
 
-move board from to = let figure = Data.Map.lookup from board
-                     in  Data.Map.update (\_ -> figure) to $ Data.Map.update (\_ -> Nothing) from board
+move board from to = let figure = fromJust $ Data.Map.lookup from board
+                     in  Data.Map.insert to figure $ Data.Map.delete from board
 
 generateMoves (fromX, fromY) color = let yMod = if color == Black then 1 else -1
                                      in  [(fromX + xAdd, fromY + yAdd*yMod ) | xAdd <- [-2..2], yAdd <- [1..2], abs xAdd == yAdd]
@@ -81,6 +81,11 @@ generateMovesTree color board = let makeMove (from, to) = move board from to
                                     nextBoards = map makeMove $ generateAllValidMoves board color
                                     nextTrees = map (generateMovesTree nextColor) nextBoards
                                 in  Node board nextTrees
+
+
+nodesAtLevel :: Int -> Tree a -> [a]
+nodesAtLevel 0 (Node a _) = [a]
+nodesAtLevel n (Node _ subtrees) = concatMap (nodesAtLevel (n-1)) subtrees
 
 b = stringToBoard initBoard
 --m = removeOffBoard $ generateMoves (1,2) Black
