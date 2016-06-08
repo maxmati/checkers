@@ -17,8 +17,8 @@ beatenPoses (fromX, fromY) (toX, toY) = let endX   = toX - fromX
                                         in  [(fromX + x, fromY + y) | x <- xMod, y <- yMod, abs x == abs y ]
 
 makeMove :: Board -> [Move] -> Board
-makeMove brd moves = let figure = fromJust $ Map.lookup (from (head moves)) brd
-                         makeSingleMove (Move from to) brd = Map.insert to figure $ Map.delete from $ foldr Map.delete brd $ beatenPoses from to
+makeMove brd moves = let figure = fromJust $ Board.lookup (from (head moves)) brd
+                         makeSingleMove (Move from to) brd = Board.insert to figure $ Board.delete from $ foldr Board.delete brd $ beatenPoses from to
                      in  foldr makeSingleMove brd moves
 
 generateMoves :: Pos -> Color -> [Turn]
@@ -38,7 +38,7 @@ removeOffBoard turns = let isMoveOnBoard (Move _ (x, y)) = x > 0 && x <= 8 && y 
                        in filter allOnBoard turns
 
 removeOccupied :: Board -> [Turn] -> [Turn]
-removeOccupied board turns = let isSquareAvailable (Move _ pos) = Map.lookup pos board == Nothing
+removeOccupied board turns = let isSquareAvailable (Move _ pos) = Board.lookup pos board == Nothing
                                  lastSquaresAvailable (Turn _ moves _) = isSquareAvailable $ last moves
                              in  filter lastSquaresAvailable turns
 
@@ -47,8 +47,8 @@ isInvalidJump brd color (Move (fromX, fromY) (toX, toY)) = let isJump = abs (toX
                                                                yMod = signum(toY - fromY)
                                                                xMod = signum(toX - fromX)
                                                                beatPos = (toX - xMod, toY - yMod )
-                                                               unableToJump = case (Map.lookup beatPos brd) of Nothing -> True
-                                                                                                               Just fig -> snd fig == color
+                                                               unableToJump = case (Board.lookup beatPos brd) of Nothing -> True
+                                                                                                                 Just fig -> snd fig == color
                                                            in (isJump && unableToJump)
 
 removeReqBeating :: Board -> Color  -> [Turn] -> [Turn]
@@ -76,7 +76,7 @@ generateValidJumps board from color = let singleJumps = removeInvalidMoves board
                                       in concatMap (addAllMultiJumps color) $ map (generateAndSetBoard board) singleJumps
 
 generateValidMoves :: Board -> Pos -> Color -> [Turn]
-generateValidMoves board from color = let fig = Map.lookup from board
+generateValidMoves board from color = let fig = Board.lookup from board
                                       in  if isJust fig && snd (fromJust fig) == color
                                           then  (removeInvalidMoves board color $ generateMoves from color)
                                                 ++ generateValidJumps board from color
@@ -85,7 +85,7 @@ generateValidMoves board from color = let fig = Map.lookup from board
 generateAllValidMoves :: Board -> Color -> [Turn]
 generateAllValidMoves board color = let positions = [(x,y) | x <- [1..8], y <- [1..8]]
                                         appendMoves acc pos = acc ++ (generateValidMoves board pos color)
-                                    in  foldl appendMoves [] positions
+                                    in  Prelude.foldl appendMoves [] positions
 
 setBoard :: Turn -> Board -> Turn
 setBoard (Turn beats move _) board = Turn beats move $ Just board
