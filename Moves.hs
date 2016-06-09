@@ -81,15 +81,32 @@ generateValidJumps board from color = let singleJumps = removeInvalidMoves board
 
 generateValidMoves :: Board -> Pos -> Color -> [Turn]
 generateValidMoves board from color = let fig = Board.lookup from board
-                                      in  if isJust fig && snd (fromJust fig) == color
-                                          then  (removeInvalidMoves board color $ generateMoves from color)
-                                                ++ generateValidJumps board from color
-                                          else []
+                                       in  if isJust fig && snd (fromJust fig) == color
+                                           then  (removeInvalidMoves board color $ generateMoves from color)
+                                                 ++ generateValidJumps board from color
+                                           else []
+
+filterLongestJump :: [Turn] -> [Turn]
+filterLongestJump turns = filter (\x -> turnLength x >= maxJumps) turns
+                         where maxJumps = maximum $ map turnLength turns
+                               turnLength (Turn _ moves _) = length moves
+
+
+filterForceJumps :: [Turn] -> [Turn]
+filterForceJumps turns
+    | forceJump = filter isJump turns
+    | otherwise = turns
+    where forceJump = any isJump turns
+          isJump (Turn jump _ _) = jump
+
+filterJumpsRequirements :: [Turn] -> [Turn]
+filterJumpsRequirements = filterLongestJump . filterForceJumps
+
 
 generateAllValidMoves :: Board -> Color -> [Turn]
 generateAllValidMoves board color = let positions = [(x,y) | x <- [1..8], y <- [1..8]]
                                         appendMoves acc pos = acc ++ (generateValidMoves board pos color)
-                                    in  Prelude.foldl appendMoves [] positions
+                                    in  filterJumpsRequirements $ Prelude.foldl appendMoves [] positions
 
 setBoard :: Turn -> Board -> Turn
 setBoard (Turn beats move _) board = Turn beats move $ Just board
