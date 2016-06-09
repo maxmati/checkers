@@ -7,7 +7,7 @@ import Utils
 data Color = Black | White deriving (Show, Eq)
 data Type = Pawn | King deriving (Show, Eq)
 type Figure = (Type, Color)
-type Pos = (Integer, Integer)
+type Pos = (Int, Int)
 newtype Board = Board (Map.Map Pos Figure)
 
 instance Show Board where
@@ -27,11 +27,11 @@ charToField 'w' = Just (Pawn, White)
 charToField 'W' = Just (King, White)
 charToField _ = Nothing
 
-stringToRow :: String -> Integer -> [(Pos, Figure)]
+stringToRow :: String -> Int -> [(Pos, Figure)]
 stringToRow string row = removeEmpty $ zip [(x,row)| x <- [1..8]] $ map charToField string
 
 stringToBoardList :: String -> [(Pos, Figure)]
-stringToBoardList string = Prelude.foldl (\all (row, string) -> all ++ (stringToRow string row)) [] $ zip [1..8] (lines string)
+stringToBoardList string = Prelude.foldl (\all (row, str) -> all ++ (stringToRow str row)) [] $ zip [1..8] (lines string)
 
 stringToBoard :: String -> Board
 stringToBoard string = Board $ Map.fromList $ stringToBoardList string
@@ -43,7 +43,7 @@ fieldToChar (Just (Pawn, White)) = '♙'
 fieldToChar (Just (King, White)) = '♕'
 fieldToChar Nothing = '.'
 
-rowToString  :: Board -> Integer -> String
+rowToString  :: Board -> Int -> String
 rowToString brd row = Prelude.foldl
                 (\old k -> old ++ [fieldToChar (Board.lookup k brd)] )
                 []

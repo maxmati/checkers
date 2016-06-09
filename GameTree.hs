@@ -4,6 +4,18 @@ import Board
 import Moves
 
 import Data.Tree
+import Data.Ord
+import Data.Foldable
+
+getBestTurn :: Color -> Board -> Turn
+getBestTurn color brd = snd bestMove
+                        where movesForest = getForestNLevels 5 $ generateMovesTree color brd
+                              posibleMoves = forestToList movesForest
+                              movesScores = map (minimize (rateTurn color)) movesForest
+                              bestMove = maximumBy (comparing fst) $ zip movesScores posibleMoves
+
+forestToList :: Forest a -> [a]
+forestToList forest = map (\(Node a _) -> a) forest
 
 generateMovesTree :: Color -> Board -> [Tree Turn]
 generateMovesTree color board = let makeTurn move = generateAndSetBoard board move

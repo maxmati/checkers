@@ -4,7 +4,7 @@ import qualified Data.Map as Map
 import Data.Maybe
 import Board
 
-data Move = Move {from:: Pos, to:: Pos} deriving Show
+data Move = Move {getFrom:: Pos, getTo:: Pos} deriving Show
 data Turn = Turn Bool [Move] (Maybe Board) deriving Show
 
 beatenPoses :: Pos -> Pos -> [Pos]
@@ -16,15 +16,18 @@ beatenPoses (fromX, fromY) (toX, toY) = let endX   = toX - fromX
                                             yMod   = if endY > startY then [startY..endY - 1] else [endY..startY + 1]
                                         in  [(fromX + x, fromY + y) | x <- xMod, y <- yMod, abs x == abs y ]
 
+makeTurn :: Board -> Turn -> Board
+makeTurn board (Turn _ moves _) = makeMove board moves
+
 makeMove :: Board -> [Move] -> Board
-makeMove brd moves = let figure = fromJust $ Board.lookup (from (head moves)) brd
-                         makeSingleMove (Move from to) brd = Board.insert to figure $ Board.delete from $ foldr Board.delete brd $ beatenPoses from to
+makeMove brd moves = let figure = fromJust $ Board.lookup (getFrom (head moves)) brd
+                         makeSingleMove (Move from to) brd' = Board.insert to figure $ Board.delete from $ foldr Board.delete brd' $ beatenPoses from to
                      in  foldr makeSingleMove brd moves
 
 generateMoves :: Pos -> Color -> [Turn]
 generateMoves from@(fromX, fromY) color = let yMod = if color == Black then 1 else -1
                                               positions = [(fromX + xAdd, fromY + yMod ) | xAdd <- [-1,1]]
-                                          in  map (\to -> Turn True [(Move from to)] Nothing) positions
+                                          in  map (\to -> Turn False [(Move from to)] Nothing) positions
 
 generateJumpsPos :: Pos -> [Pos]
 generateJumpsPos (fromX, fromY) = [(fromX + xAdd, fromY + yAdd ) | xAdd <- [-2,2], yAdd <- [-2,2]]
@@ -61,7 +64,7 @@ removeInvalidMoves :: Board -> Color -> [Turn] -> [Turn]
 removeInvalidMoves board color turns = removeReqBeating board color $ removeOccupied board $ removeOffBoard turns
 
 addMultiJumps :: Turn -> [Turn]
-addMultiJumps (Turn b moves brd) = let lastPos = to $ last moves
+addMultiJumps (Turn b moves brd) = let lastPos = getTo $ last moves
                                        availableMoves = generateJumpsPos lastPos
                                    in  map (\to -> Turn b (moves ++ [Move lastPos to]) brd) availableMoves
 
@@ -91,7 +94,7 @@ setBoard :: Turn -> Board -> Turn
 setBoard (Turn beats move _) board = Turn beats move $ Just board
 
 generateAndSetBoard :: Board -> Turn -> Turn
-generateAndSetBoard board turn@(Turn _ moves _) =  setBoard turn $ makeMove board moves
+generateAndSetBoard board turn = setBoard turn $ makeTurn board turn
 
 getBoard :: Turn -> Board
 getBoard (Turn _ _ board) = fromJust board
