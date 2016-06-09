@@ -1,8 +1,9 @@
-module Moves where
+module Moves (Turn(Turn), Move(Move, getFrom,getTo), makeTurn, generateAllValidMoves, generateAndSetBoard, getBoard) where
+
 
 import qualified Data.Map as Map
 import Data.Maybe
-import Board
+import Board hiding (foldl)
 
 data Move = Move {getFrom:: Pos, getTo:: Pos} deriving Show
 data Turn = Turn Bool [Move] (Maybe Board) deriving Show
@@ -17,12 +18,12 @@ beatenPoses (fromX, fromY) (toX, toY) = let endX   = toX - fromX
                                         in  [(fromX + x, fromY + y) | x <- xMod, y <- yMod, abs x == abs y ]
 
 makeTurn :: Board -> Turn -> Board
-makeTurn board (Turn _ moves _) = makeMove board moves
-
-makeMove :: Board -> [Move] -> Board
-makeMove brd moves = let figure = fromJust $ Board.lookup (getFrom (head moves)) brd
-                         makeSingleMove (Move from to) brd' = Board.insert to figure $ Board.delete from $ foldr Board.delete brd' $ beatenPoses from to
-                     in  foldr makeSingleMove brd moves
+makeTurn brd (Turn False [move] _) = Board.insert (getTo move) figure $ Board.delete (getFrom move) brd
+                                     where figure = fromJust $ Board.lookup (getFrom move) brd
+makeTurn _ (Turn False _ _) = undefined
+makeTurn brd (Turn True moves _)  = let figure = fromJust $ Board.lookup (getFrom (head moves)) brd
+                                        makeSingleMove brd' (Move from to) = Board.insert to figure $ Board.delete from $ foldr Board.delete brd' $ beatenPoses from to
+                                    in  foldl makeSingleMove brd moves
 
 generateMoves :: Pos -> Color -> [Turn]
 generateMoves from@(fromX, fromY) color = let yMod = if color == Black then 1 else -1

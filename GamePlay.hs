@@ -1,4 +1,4 @@
-module GamePlay where
+module GamePlay (PDN(Move, Kill), makeMove, makeBestTurn) where
 
 import Board
 import Moves

@@ -1,4 +1,4 @@
-module GameTree where
+module GameTree (getBestTurn) where
 
 import Board
 import Moves

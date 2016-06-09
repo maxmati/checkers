@@ -11,12 +11,9 @@ import Debug.Trace
 import Board
 import Data.Foldable
 import GamePlay
---- TODO przetestowac
 -- uproszczony "parser" PDN
 -- ruch Int-Int
 -- bicie [Intx]Int
-
-b = stringToBoard initBoard
 
 parsePos :: Parser Int
 parsePos = do
@@ -59,7 +56,7 @@ play color brd i
   (move, brd'') <- return $ makeBestTurn color brd'
   putStr $ show $ brd''
   putStrLn $ show move
-  hFlush stdout -- konkretny ruch trzeba wygenerowac
+  hFlush stdout
   return brd''
 
 

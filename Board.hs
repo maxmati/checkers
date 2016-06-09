@@ -1,4 +1,4 @@
-module Board where
+module Board (Pos, Board, Color(White, Black), Figure, Board.lookup, insert, delete, Board.foldl, opositeColor, b, putBoard) where
 
 import qualified Data.Map as Map
 import Utils
@@ -15,6 +15,9 @@ instance Show Board where
 
 initBoard :: String
 initBoard = ".b.b.b.b\nb.b.b.b.\n.b.b.b.b\n........\n........\nw.w.w.w.\n.w.w.w.w\nw.w.w.w."
+b :: Board
+b = stringToBoard initBoard
+
 
 opositeColor :: Color -> Color
 opositeColor Black = White
