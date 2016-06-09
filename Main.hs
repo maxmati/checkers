@@ -18,13 +18,6 @@ import GamePlay
 
 b = stringToBoard initBoard
 
-
--- instance Show PDN where
---   show (Move (a,c)) = (show a)++ "-"++ (show c)
---   show (Kill [p]) = (show p)
---   show (Kill (p:ps)) = (show p)++ "x" ++ show (Kill ps)
-
-
 parsePos :: Parser Int
 parsePos = do
             x <- int
@@ -64,6 +57,7 @@ play color brd i
     Left x -> fail $ show x
   putStr $ show $ brd'
   (move, brd'') <- return $ makeBestTurn color brd'
+  putStr $ show $ brd''
   putStrLn $ show move
   hFlush stdout -- konkretny ruch trzeba wygenerowac
   return brd''
@@ -79,7 +73,7 @@ main = do
   progName <- getProgName
   mapM_ putStrLn args
   putStrLn progName
---  let args = [""] -- do zakomentowania w programmie
+--  let args = ["w"] -- do zakomentowania w programmie
   case (listToMaybe args) of
     Just "b" -> doPlay Black b
     Just "w" -> do

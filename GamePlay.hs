@@ -6,7 +6,13 @@ import GameTree
 
 data PDN =   Move (Int,Int) -- pozycja startowa i koncowa
            | Kill [Int]  -- pozycja startowa to glowa, pozniej kolejne pozycje
-           deriving (Show,Eq)
+           deriving Eq
+
+instance Show PDN where
+   show (GamePlay.Move (a,c)) = (show a)++ "-"++ (show c)
+   show (Kill [p]) = (show p)
+   show (Kill (p:ps)) = (show p)++ "x" ++ show (Kill ps)
+   show (Kill []) = undefined
 
 makeBestTurn :: Color -> Board -> (PDN, Board)
 makeBestTurn color brd = turnToIdBoard $ getBestTurn color brd
@@ -16,8 +22,6 @@ turnToIdBoard (Turn isJump moves (Just brd))
     | isJump = (jumpToPDN moves, brd)
     | otherwise = (moveToPDN moves, brd)
 turnToIdBoard (Turn _ _ Nothing) = undefined
-
-
 
 jumpToPDN :: [Move] -> PDN
 jumpToPDN moves = Kill $ [(posToId . getFrom . head) moves] ++ map (posToId . getTo) moves
