@@ -7,6 +7,7 @@ import Board hiding (foldl)
 
 data Move = Move {getFrom:: Pos, getTo:: Pos} deriving Show
 data Turn = Turn Bool [Move] (Maybe Board) deriving Show
+data Direction = NE | SE | SW | NW
 
 beatenPoses :: Pos -> Pos -> [Pos]
 beatenPoses (fromX, fromY) (toX, toY) = let endX   = toX - fromX
@@ -24,6 +25,58 @@ makeTurn _ (Turn False _ _) = undefined
 makeTurn brd (Turn True moves _)  = let figure = fromJust $ Board.lookup (getFrom (head moves)) brd
                                         makeSingleMove brd' (Move from to) = Board.insert to figure $ Board.delete from $ foldr Board.delete brd' $ beatenPoses from to
                                     in  foldl makeSingleMove brd moves
+
+generateKingMovesPos :: Pos -> Direction -> [Pos]
+generateKingMovesPos (x, y) NE
+    | maxval == 8 = []
+    | otherwise = [(x + z, y + z) | z <- [1..8-maxval]]
+    where maxval = max x y
+generateKingMovesPos (x, y) SE
+    | maxval == 8 = []
+    | otherwise = [(x + z, y - z) | z <- [1..8-maxval]]
+    where maxval = max x (9-y)
+generateKingMovesPos (x, y) SW
+    | maxval == 8 = []
+    | otherwise = [(x - z, y - z) | z <- [1..8-maxval]]
+    where maxval = max (9-x) (9-y)
+generateKingMovesPos (x, y) NW
+    | maxval == 8 = []
+    | otherwise = [(x + z, y - z) | z <- [1..8-maxval]]
+    where maxval = max x (9-y)
+
+
+addKingMultiJumps :: Color -> Board -> Turn -> [Turn]
+addKingMultiJumps color brd turn
+    | null aviableJumps = [turn]
+    | otherwise = aviableJumps
+    where dirs = [NE, SE, SW, NW]
+          from = getTo $ getLastMove turn
+          addMove (Turn jump moves _) pos = Turn jump (moves ++ [Move from pos]) Nothing
+          addMoves = map (addMove turn)
+          brd' = makeTurn brd turn
+          aviableJumps = concatMap ((removeInvalidKingMoves True color brd'). addMoves . (generateKingMovesPos from)) dirs
+
+getLastMove :: Turn -> Move
+getLastMove (Turn _ moves _) = last moves
+
+removeInvalidKingMoves :: Bool -> Color -> Board -> [Turn] -> [Turn]
+removeInvalidKingMoves _ _ _ [] = []
+removeInvalidKingMoves reqJump color brd (pos:rest)
+    | isNothing fig && reqJump = [] -- req jump and nothin to jump
+    | isNothing fig = [pos] ++ removeInvalidKingMoves reqJump color brd rest -- standard jump
+    | (getColor $ fromJust fig) == color = removeInvalidKingMoves reqJump color brd rest -- field occupied
+    | otherwise = if isNothing $ Board.lookup (getLastTarget (head rest)) brd then addKingMultiJumps color brd $ setJump $ head rest else [] -- fig to jump over
+    where fig = Board.lookup (getLastTarget pos) brd
+          getLastTarget turn = getTo $ getLastMove turn
+          setJump (Turn _ moves brd') = Turn True moves brd'
+
+generateKingMoves :: Color -> Board -> Pos -> [Turn]
+generateKingMoves color brd pos = concatMap ((removeInvalidKingMoves False color brd) . createTurns . (generateKingMovesPos pos)) dirs
+                                  where dirs = [NE, SE, SW, NW]
+                                        createTurns poses = map (createTurn pos) poses
+
+createTurn :: Pos -> Pos -> Turn
+createTurn from to  = Turn False [Move from to] Nothing
 
 generateMoves :: Pos -> Color -> [Turn]
 generateMoves from@(fromX, fromY) color = let yMod = if color == Black then 1 else -1
@@ -56,8 +109,7 @@ isInvalidJump brd color (Move (fromX, fromY) (toX, toY)) = let isJump = abs (toX
                                                            in (isJump && unableToJump)
 
 removeReqBeating :: Board -> Color  -> [Turn] -> [Turn]
-removeReqBeating brd color turns = let getLastMove (Turn _ moves _) = last moves
-                                       keep = not . isInvalidJump brd color . getLastMove
+removeReqBeating brd color turns = let keep = not . isInvalidJump brd color . getLastMove
                                    in  filter keep turns
 
 
@@ -82,8 +134,10 @@ generateValidJumps board from color = let singleJumps = removeInvalidMoves board
 generateValidMoves :: Board -> Pos -> Color -> [Turn]
 generateValidMoves board from color = let fig = Board.lookup from board
                                        in  if isJust fig && snd (fromJust fig) == color
-                                           then  (removeInvalidMoves board color $ generateMoves from color)
-                                                 ++ generateValidJumps board from color
+                                           then if fst (fromJust fig) == Pawn
+                                                then (removeInvalidMoves board color $ generateMoves from color)
+                                                     ++ generateValidJumps board from color
+                                                else generateKingMoves color board from
                                            else []
 
 filterLongestJump :: [Turn] -> [Turn]
