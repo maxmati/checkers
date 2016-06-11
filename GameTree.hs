@@ -9,7 +9,7 @@ import Data.Foldable
 
 getBestTurn :: Color -> Board -> Turn
 getBestTurn color brd = snd bestMove
-                        where movesForest = getForestNLevels 5 $ generateMovesTree color brd
+                        where movesForest = getForestNLevels 15 $ generateMovesTree color brd
                               posibleMoves = forestToList movesForest
                               movesScores = map (minimize (rateTurn color)) movesForest
                               bestMove = maximumBy (comparing fst) $ zip movesScores posibleMoves
@@ -68,7 +68,7 @@ rateTurn color (Turn _ _ brd) = maybe 0 (rateBoard color) brd
 rateBoard :: Color -> Board -> Int
 rateBoard color brd = let myCount = Board.foldl (countColorFields color) 0 brd
                           enemyCount = Board.foldl (countColorFields $ opositeColor color) 0 brd
-                      in  2 * myCount - enemyCount
+                      in  myCount - enemyCount
 
 getForestNLevels :: Int -> Forest a -> Forest a
 getForestNLevels n forest = map (getNLevels (n)) forest

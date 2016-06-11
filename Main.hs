@@ -46,15 +46,13 @@ parsePDN =  try parseMove <|> parseKill
 type Game a = IO a
 
 play :: Color -> Board -> String -> Game Board
-play color brd i
-    |trace i False = undefined
-    |otherwise  = do
+play color brd i = do
   brd' <- case parse parsePDN "sPDN err" i of
     Right move -> return $ makeMove brd move
     Left x -> fail $ show x
-  putStr $ show $ brd'
+  hPutStr stderr $ show $ brd'
   (move, brd'') <- return $ makeBestTurn color brd'
-  putStr $ show $ brd''
+  hPutStr stderr $ show $ brd''
   putStrLn $ show move
   hFlush stdout
   return brd''
@@ -68,15 +66,15 @@ main :: IO Board
 main = do
   args <- getArgs
   progName <- getProgName
-  mapM_ putStrLn args
-  putStrLn progName
+--  mapM_ putStrLn args
+--  putStrLn progName
 --  let args = ["w"] -- do zakomentowania w programmie
   case (listToMaybe args) of
     Just "b" -> doPlay Black b
     Just "w" -> do
-          putStr $ show $ b
+--          putStr $ show b
           (move, brd') <- return $ makeBestTurn White b
-          putStr $ show $ brd'
+--          putStr $ show brd'
           putStrLn $ show $ move
           hFlush stdout
           doPlay White brd'

@@ -82,9 +82,6 @@ addKingMultiJumps color brd turn
 
 getLastMove :: Turn -> Move
 getLastMove (Turn _ moves _) = last moves
---fieldToChar (Just (King, Black)) = '♛'
---fieldToChar (Just (Pawn, White)) = '♙'
---fieldToChar (Just (King, White)) = '♕'
 
 removeInvalidKingMoves :: Bool -> Color -> Board -> [Turn] -> [Turn]
 removeInvalidKingMoves _ _ _ [] = []
