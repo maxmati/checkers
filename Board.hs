@@ -22,24 +22,24 @@ b2 :: Board
 b2 = stringToBoard "...b.b.b\nw.b.b.b.\n.b.b...b\n....b...\n........\nw.w.b.w.\n.w.w...w\nw.w.w.b."
 
 b3 :: Board
-b3 = (stringToBoard . unlines) [".b.b.b.b",
-                                "b.b...b.",
-                                ".....b.b",
-                                "..b.....",
-                                ".....w.w",
-                                "w.w...w.",
-                                ".w.....w",
-                                "w.w.w..."]
+b3 = (stringToBoard . unlines) ["...W.b..",
+                                "b.......",
+                                "........",
+                                "..B.....",
+                                ".w.b....",
+                                "....b...",
+                                ".w......",
+                                "w...B..."]
 
 b4 :: Board
-b4 = (stringToBoard . unlines) [".......W",
-                                "b.B.....",
+b4 = (stringToBoard . unlines) ["...W.b..",
+                                "b.......",
                                 "........",
                                 "........",
-                                "........",
-                                "....b.b.",
-                                "........",
-                                "........"]
+                                "...b....",
+                                "w...b...",
+                                ".w......",
+                                "w...B.B."]
 
 
 getColor :: Figure -> Color
@@ -54,6 +54,10 @@ charToField 'b' = Just (Pawn, Black)
 charToField 'B' = Just (King, Black)
 charToField 'w' = Just (Pawn, White)
 charToField 'W' = Just (King, White)
+charToField '♟' = Just (Pawn, Black)
+charToField '♛' = Just (King, Black)
+charToField '♙' = Just (Pawn, White)
+charToField '♕' = Just (King, White)
 charToField _ = Nothing
 
 stringToRow :: String -> Int -> [(Pos, Figure)]

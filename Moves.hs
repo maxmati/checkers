@@ -5,6 +5,8 @@ import qualified Data.Map as Map
 import Data.Maybe
 import Board hiding (foldl)
 
+import Debug.Trace
+
 data Move = Move {getFrom:: Pos, getTo:: Pos} deriving Show
 data Turn = Turn Bool [Move] (Maybe Board) deriving Show
 data Direction = NE | SE | SW | NW
@@ -75,11 +77,14 @@ addKingMultiJumps color brd turn
           from = getTo $ getLastMove turn
           addMove (Turn jump moves _) pos = Turn jump (moves ++ [Move from pos]) Nothing
           addMoves = map (addMove turn)
-          brd' = makeTurn brd turn
+          brd' = makeTurnLast brd turn
           aviableJumps = concatMap ((removeInvalidKingMoves True color brd'). addMoves . (generateKingMovesPos from)) dirs
 
 getLastMove :: Turn -> Move
 getLastMove (Turn _ moves _) = last moves
+--fieldToChar (Just (King, Black)) = '♛'
+--fieldToChar (Just (Pawn, White)) = '♙'
+--fieldToChar (Just (King, White)) = '♕'
 
 removeInvalidKingMoves :: Bool -> Color -> Board -> [Turn] -> [Turn]
 removeInvalidKingMoves _ _ _ [] = []
