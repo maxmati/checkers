@@ -19,7 +19,7 @@ b :: Board
 b = stringToBoard initBoard
 
 b2 :: Board
-b2 = stringToBoard ".b.b.b.b\nb.b.b.b.\n.b.b...b\n....b...\n........\nw.w.b.w.\n.w.w...w\nw.w.w.W."
+b2 = stringToBoard "...b.b.b\nw.b.b.b.\n.b.b...b\n....b...\n........\nw.w.b.w.\n.w.w...w\nw.w.w.b."
 
 
 getColor :: Figure -> Color

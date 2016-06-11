@@ -18,13 +18,27 @@ beatenPoses (fromX, fromY) (toX, toY) = let endX   = toX - fromX
                                             yMod   = if endY > startY then [startY..endY - 1] else [endY..startY + 1]
                                         in  [(fromX + x, fromY + y) | x <- xMod, y <- yMod, abs x == abs y ]
 
+changePawnForKing :: Color -> Pos -> Board -> Board
+changePawnForKing color pos brd
+    | (getColor <$> fig) == Just color = Board.insert pos (King, color) brd
+    | otherwise = brd
+    where fig = Board.lookup pos brd
+
+checkForPawnKingChange :: Board -> Board
+checkForPawnKingChange brd = foldr (changePawnForKing Black) (foldr (changePawnForKing White) brd whitePoses) blackPoses
+                             where whitePoses = [(x*2, 1) | x <- [1..4]]
+                                   blackPoses = [(x*2 - 1, 8) | x <- [1..4]]
+
 makeTurn :: Board -> Turn -> Board
-makeTurn brd (Turn False [move] _) = Board.insert (getTo move) figure $ Board.delete (getFrom move) brd
+makeTurn brd = checkForPawnKingChange . moveFig brd
+
+moveFig :: Board -> Turn -> Board
+moveFig brd (Turn False [move] _) = Board.insert (getTo move) figure $ Board.delete (getFrom move) brd
                                      where figure = fromJust $ Board.lookup (getFrom move) brd
-makeTurn _ (Turn False _ _) = undefined
-makeTurn brd (Turn True moves _)  = let figure = fromJust $ Board.lookup (getFrom (head moves)) brd
-                                        makeSingleMove brd' (Move from to) = Board.insert to figure $ Board.delete from $ foldr Board.delete brd' $ beatenPoses from to
-                                    in  foldl makeSingleMove brd moves
+moveFig _ (Turn False _ _) = undefined
+moveFig brd (Turn True moves _)  = let figure = fromJust $ Board.lookup (getFrom (head moves)) brd
+                                       makeSingleMove brd' (Move from to) = Board.insert to figure $ Board.delete from $ foldr Board.delete brd' $ beatenPoses from to
+                                   in  foldl makeSingleMove brd moves
 
 generateKingMovesPos :: Pos -> Direction -> [Pos]
 generateKingMovesPos (x, y) NE
