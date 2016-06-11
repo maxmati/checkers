@@ -32,6 +32,14 @@ checkForPawnKingChange brd = foldr (changePawnForKing Black) (foldr (changePawnF
 makeTurn :: Board -> Turn -> Board
 makeTurn brd = checkForPawnKingChange . moveFig brd
 
+makeTurnLast :: Board -> Turn -> Board
+makeTurnLast brd = checkForPawnKingChange . moveFigLast brd
+
+moveFigLast :: Board -> Turn -> Board
+moveFigLast brd (Turn True moves _) = let figure = fromJust $ Board.lookup (getFrom (last moves)) brd
+                                          makeSingleMove brd' (Move from to) = Board.insert to figure $ Board.delete from $ foldr Board.delete brd' $ beatenPoses from to
+                                      in  makeSingleMove brd (last moves)
+
 moveFig :: Board -> Turn -> Board
 moveFig brd (Turn False [move] _) = Board.insert (getTo move) figure $ Board.delete (getFrom move) brd
                                      where figure = fromJust $ Board.lookup (getFrom move) brd
@@ -131,9 +139,10 @@ removeInvalidMoves :: Board -> Color -> [Turn] -> [Turn]
 removeInvalidMoves board color turns = removeReqBeating board color $ removeOccupied board $ removeOffBoard turns
 
 addMultiJumps :: Turn -> [Turn]
-addMultiJumps (Turn b moves brd) = let lastPos = getTo $ last moves
+addMultiJumps (Turn j moves brd) = let lastPos = getTo $ last moves
                                        availableMoves = generateJumpsPos lastPos
-                                   in  map (\to -> Turn b (moves ++ [Move lastPos to]) brd) availableMoves
+                                       updateBoard = updateAndSetBoard (fromJust brd)
+                                   in  map (\to -> updateBoard $ Turn j (moves ++ [Move lastPos to]) brd) availableMoves
 
 addAllMultiJumps :: Color -> Turn -> [Turn]
 addAllMultiJumps color turn
@@ -178,6 +187,9 @@ generateAllValidMoves board color = let positions = [(x,y) | x <- [1..8], y <- [
 
 setBoard :: Turn -> Board -> Turn
 setBoard (Turn beats move _) board = Turn beats move $ Just board
+
+updateAndSetBoard :: Board -> Turn -> Turn
+updateAndSetBoard board turn = setBoard turn $ makeTurnLast board turn
 
 generateAndSetBoard :: Board -> Turn -> Turn
 generateAndSetBoard board turn = setBoard turn $ makeTurn board turn

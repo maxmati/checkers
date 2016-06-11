@@ -1,4 +1,4 @@
-module Board (Pos, Board, Color(White, Black), Figure, Type(Pawn,King), Board.lookup, insert, delete, Board.foldl, opositeColor, b, b2, putBoard, getColor) where
+module Board (Pos, Board, Color(White, Black), Figure, Type(Pawn,King), Board.lookup, insert, delete, Board.foldl, opositeColor, b, b2, b3, b4, putBoard, getColor) where
 
 import qualified Data.Map as Map
 import Utils
@@ -20,6 +20,26 @@ b = stringToBoard initBoard
 
 b2 :: Board
 b2 = stringToBoard "...b.b.b\nw.b.b.b.\n.b.b...b\n....b...\n........\nw.w.b.w.\n.w.w...w\nw.w.w.b."
+
+b3 :: Board
+b3 = (stringToBoard . unlines) [".b.b.b.b",
+                                "b.b...b.",
+                                ".....b.b",
+                                "..b.....",
+                                ".....w.w",
+                                "w.w...w.",
+                                ".w.....w",
+                                "w.w.w..."]
+
+b4 :: Board
+b4 = (stringToBoard . unlines) [".b.b.b.b",
+                                "b.b...b.",
+                                ".....b.b",
+                                "........",
+                                ".....w.w",
+                                "b.w...w.",
+                                ".w.w...w",
+                                "w...w..."]
 
 
 getColor :: Figure -> Color

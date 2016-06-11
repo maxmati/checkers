@@ -18,9 +18,9 @@ forestToList :: Forest a -> [a]
 forestToList forest = map (\(Node a _) -> a) forest
 
 generateMovesTree :: Color -> Board -> [Tree Turn]
-generateMovesTree color board = let makeTurn move = generateAndSetBoard board move
+generateMovesTree color board = let updateBoard = generateAndSetBoard board
                                     nextColor = if color == Black then White else Black
-                                    nextTurn = map makeTurn $ generateAllValidMoves board color
+                                    nextTurn = map updateBoard $ generateAllValidMoves board color
                                     createNode move = Node move (generateMovesTree nextColor $ getBoard move)
                                 in  map createNode nextTurn
 
