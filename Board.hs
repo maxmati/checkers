@@ -32,14 +32,14 @@ b3 = (stringToBoard . unlines) [".b.b.b.b",
                                 "w.w.w..."]
 
 b4 :: Board
-b4 = (stringToBoard . unlines) [".b.b.b.b",
-                                "b.b...b.",
-                                ".....b.b",
+b4 = (stringToBoard . unlines) [".......W",
+                                "b.B.....",
                                 "........",
-                                ".....w.w",
-                                "b.w...w.",
-                                ".w.w...w",
-                                "w...w..."]
+                                "........",
+                                "........",
+                                "....b.b.",
+                                "........",
+                                "........"]
 
 
 getColor :: Figure -> Color

@@ -49,22 +49,22 @@ moveFig brd (Turn True moves _)  = let figure = fromJust $ Board.lookup (getFrom
                                    in  foldl makeSingleMove brd moves
 
 generateKingMovesPos :: Pos -> Direction -> [Pos]
-generateKingMovesPos (x, y) NE
+generateKingMovesPos (x, y) SE
     | maxval == 8 = []
     | otherwise = [(x + z, y + z) | z <- [1..8-maxval]]
     where maxval = max x y
-generateKingMovesPos (x, y) SE
+generateKingMovesPos (x, y) NE
     | maxval == 8 = []
     | otherwise = [(x + z, y - z) | z <- [1..8-maxval]]
     where maxval = max x (9-y)
 generateKingMovesPos (x, y) SW
     | maxval == 8 = []
-    | otherwise = [(x - z, y - z) | z <- [1..8-maxval]]
-    where maxval = max (9-x) (9-y)
+    | otherwise = [(x - z, y + z) | z <- [1..8-maxval]]
+    where maxval = max (9-x) y
 generateKingMovesPos (x, y) NW
     | maxval == 8 = []
-    | otherwise = [(x + z, y - z) | z <- [1..8-maxval]]
-    where maxval = max x (9-y)
+    | otherwise = [(x - z, y - z) | z <- [1..8-maxval]]
+    where maxval = max (9-x) (9-y)
 
 
 addKingMultiJumps :: Color -> Board -> Turn -> [Turn]
@@ -87,6 +87,7 @@ removeInvalidKingMoves reqJump color brd (pos:rest)
     | isNothing fig && reqJump = [] -- req jump and nothin to jump
     | isNothing fig = [pos] ++ removeInvalidKingMoves reqJump color brd rest -- standard jump
     | (getColor $ fromJust fig) == color = removeInvalidKingMoves reqJump color brd rest -- field occupied
+    | null rest = [] -- border of board
     | otherwise = if isNothing $ Board.lookup (getLastTarget (head rest)) brd then addKingMultiJumps color brd $ setJump $ head rest else [] -- fig to jump over
     where fig = Board.lookup (getLastTarget pos) brd
           getLastTarget turn = getTo $ getLastMove turn
