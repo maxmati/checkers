@@ -40,7 +40,7 @@ positionsRates = Map.fromList $ (convertList (Pawn, Black) listBlackPawn)
 
 getBestTurn :: Color -> Board -> Turn
 getBestTurn color brd = snd bestMove
-                        where movesForest = getForestNLevels 15 $ generateMovesTree color brd
+                        where movesForest = getForestNLevels 9 $ generateMovesTree color brd
                               posibleMoves = forestToList movesForest
                               movesScores = map (minimize (rateTurn color)) movesForest
                               bestMove = maximumBy (comparing fst) $ zip movesScores posibleMoves
@@ -99,8 +99,8 @@ rateTurn color (Turn _ _ brd) = maybe 0 (rateBoard color) brd
 rateBoard :: Color -> Board -> Float
 rateBoard color brd = Board.foldlWithKey addRate 0 brd
                       where addRate acc pos fig@(_, currentColor)
-                                | currentColor == color = acc + (getPoints (fig,pos))
-                                | otherwise = acc - (getPoints (fig,pos))
+                                | currentColor == color = acc + (getPoints (fig,pos)) + 200
+                                | otherwise = acc - (getPoints (fig,pos)) - 200
                             getPoints k = fromMaybe 0 $ Map.lookup k positionsRates
 
 getForestNLevels :: Int -> Forest a -> Forest a
