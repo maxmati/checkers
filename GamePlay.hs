@@ -14,8 +14,8 @@ instance Show PDN where
    show (Kill (p:ps)) = (show p)++ "x" ++ show (Kill ps)
    show (Kill []) = undefined
 
-makeBestTurn :: Color -> Board -> (PDN, Board)
-makeBestTurn color brd = turnToIdBoard $ getBestTurn color brd
+makeBestTurn :: Color -> Board -> Maybe (PDN, Board)
+makeBestTurn color brd = turnToIdBoard <$> getBestTurn color brd
 
 turnToIdBoard :: Turn -> (PDN, Board)
 turnToIdBoard (Turn isJump moves (Just brd))

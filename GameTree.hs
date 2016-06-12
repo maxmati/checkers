@@ -38,12 +38,14 @@ positionsRates = Map.fromList $ (convertList (Pawn, Black) listBlackPawn)
                              ++ (convertList (King, White) listWhiteKing)
 
 
-getBestTurn :: Color -> Board -> Turn
-getBestTurn color brd = snd bestMove
-                        where movesForest = getForestNLevels 9 $ generateMovesTree color brd
-                              posibleMoves = forestToList movesForest
-                              movesScores = map (minimize (rateTurn color)) movesForest
-                              bestMove = maximumBy (comparing fst) $ zip movesScores posibleMoves
+getBestTurn :: Color -> Board -> Maybe Turn
+getBestTurn color brd
+    | null movesForest = Nothing
+    | otherwise = Just $ snd bestMove
+    where movesForest = getForestNLevels 7 $ generateMovesTree color brd
+          posibleMoves = forestToList movesForest
+          movesScores = map (minimize (rateTurn color)) movesForest
+          bestMove = maximumBy (comparing fst) $ zip movesScores posibleMoves
 
 forestToList :: Forest a -> [a]
 forestToList = map (\(Node a _) -> a)
@@ -88,10 +90,6 @@ mapmin' cmin mapper alpha forest
     | current >= alpha = current
     | otherwise = mapmin' (min current cmin) mapper alpha (tail forest)
     where current = maximize' mapper (alpha, cmin) (head forest)
-
-
-countColorFields :: Color -> Int -> Figure -> Int
-countColorFields color acc (_, figureColor) = if color == figureColor then acc + 1 else acc
 
 rateTurn :: Color -> Turn -> Float
 rateTurn color (Turn _ _ brd) = maybe 0 (rateBoard color) brd

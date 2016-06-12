@@ -53,7 +53,12 @@ play color brd i = do
     Left x -> fail $ show x
   hPutStr stderr $ "Rate: \n" ++ (show (rateBoard color brd'))
   hPutStr stderr $ show $ brd'
-  (move, brd'') <- return $ makeBestTurn color brd'
+  turn <- return $ makeBestTurn color brd'
+
+  (move, brd'') <- case turn of
+    Just a -> return a
+    Nothing -> fail "End of game"
+
   hPutStr stderr $ "Rate: \n" ++ (show (rateBoard color brd''))
   hPutStr stderr $ show $ brd''
   putStrLn $ show move
@@ -76,7 +81,7 @@ main = do
     Just "b" -> doPlay Black b
     Just "w" -> do
 --          putStr $ show b
-          (move, brd') <- return $ makeBestTurn White b
+          (move, brd') <- return $ fromJust $ makeBestTurn White b
 --          putStr $ show brd'
           putStrLn $ show $ move
           hFlush stdout
