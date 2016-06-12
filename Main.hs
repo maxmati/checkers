@@ -11,6 +11,7 @@ import Debug.Trace
 import Board
 import Data.Foldable
 import GamePlay
+import GameTree
 -- uproszczony "parser" PDN
 -- ruch Int-Int
 -- bicie [Intx]Int
@@ -50,8 +51,10 @@ play color brd i = do
   brd' <- case parse parsePDN "sPDN err" i of
     Right move -> return $ makeMove brd move
     Left x -> fail $ show x
+  hPutStr stderr $ "Rate: \n" ++ (show (rateBoard color brd'))
   hPutStr stderr $ show $ brd'
   (move, brd'') <- return $ makeBestTurn color brd'
+  hPutStr stderr $ "Rate: \n" ++ (show (rateBoard color brd''))
   hPutStr stderr $ show $ brd''
   putStrLn $ show move
   hFlush stdout

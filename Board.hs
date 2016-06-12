@@ -1,11 +1,11 @@
-module Board (Pos, Board, Color(White, Black), Figure, Type(Pawn,King), Board.lookup, insert, delete, Board.foldl, opositeColor, b, b2, b3, b4, putBoard, getColor) where
+module Board (Pos, Board, Color(White, Black), Figure, Type(Pawn,King), Board.lookup, insert, delete, Board.foldl, Board.foldlWithKey, opositeColor, b, b2, b3, b4, putBoard, getColor) where
 
 import qualified Data.Map as Map
 import Utils
 
 
-data Color = Black | White deriving (Show, Eq)
-data Type = Pawn | King deriving (Show, Eq)
+data Color = Black | White deriving (Show, Eq, Ord)
+data Type = Pawn | King deriving (Show, Eq, Ord)
 type Figure = (Type, Color)
 type Pos = (Int, Int)
 newtype Board = Board (Map.Map Pos Figure)
@@ -100,3 +100,6 @@ delete pos (Board brd) = Board $ Map.delete pos brd
 
 foldl :: (a -> Figure -> a) -> a -> Board -> a
 foldl f acc (Board brd) = Map.foldl f acc brd
+
+foldlWithKey :: (a -> Pos -> Figure -> a) -> a -> Board -> a
+foldlWithKey f acc (Board brd) = Map.foldlWithKey f acc brd

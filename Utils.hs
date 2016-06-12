@@ -6,3 +6,6 @@ removeEmpty :: [(t, Maybe a)] -> [(t, a)]
 removeEmpty list = let removeJust (a,b) = (a, fromJust b)
                        isNotEmpty (_, b) = isJust b
                    in  map removeJust $ filter isNotEmpty list
+
+inf :: (RealFloat a) => a
+inf = 1/0

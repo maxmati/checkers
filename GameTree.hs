@@ -1,11 +1,42 @@
-module GameTree (getBestTurn) where
+module GameTree (getBestTurn, rateBoard) where
 
 import Board
 import Moves
+import Utils
 
 import Data.Tree
+import qualified Data.Map as Map
 import Data.Ord
+import Data.Maybe
 import Data.Foldable
+
+
+listBlackPawn :: [[Float]]
+listBlackPawn = [[0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7],
+                 [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7],
+                 [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7],
+                 [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8],
+                 [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9],
+                 [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+                 [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
+                 [1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7]]
+listWhitePawn :: [[Float]]
+listWhitePawn = reverse listBlackPawn
+listBlackKing :: [[Float]]
+listBlackKing = [[2 | x <- [0..7]] | y <- [0..7]]
+listWhiteKing :: [[Float]]
+listWhiteKing = [[2 | x <- [0..7]] | y <- [0..7]]
+
+convertList :: Figure -> [[Float]] -> [((Figure, Pos), Float)]
+convertList fig list = map toItem [(x,y) | x <- [1..8], y <- [1..8]]
+                       where toItem pos@(x,y) = ((fig, pos), list!!(y-1)!!(x-1))
+
+positionsRates :: Map.Map (Figure, Pos) Float
+positionsRates = Map.fromList $ (convertList (Pawn, Black) listBlackPawn)
+                             ++ (convertList (Pawn, White) listWhitePawn)
+                             ++ (convertList (King, Black) listBlackKing)
+                             ++ (convertList (King, White) listWhiteKing)
+
 
 getBestTurn :: Color -> Board -> Turn
 getBestTurn color brd = snd bestMove
@@ -15,7 +46,7 @@ getBestTurn color brd = snd bestMove
                               bestMove = maximumBy (comparing fst) $ zip movesScores posibleMoves
 
 forestToList :: Forest a -> [a]
-forestToList forest = map (\(Node a _) -> a) forest
+forestToList = map (\(Node a _) -> a)
 
 generateMovesTree :: Color -> Board -> [Tree Turn]
 generateMovesTree color board = let updateBoard = generateAndSetBoard board
@@ -24,34 +55,34 @@ generateMovesTree color board = let updateBoard = generateAndSetBoard board
                                     createNode move = Node move (generateMovesTree nextColor $ getBoard move)
                                 in  map createNode nextTurn
 
-maximize :: (a -> Int) -> Tree a -> Int
-maximize mapper = maximize' mapper (minBound, maxBound)
+maximize :: (a -> Float) -> Tree a -> Float
+maximize mapper = maximize' mapper (-inf, inf)
 
-maximize' :: (a -> Int) -> (Int, Int) -> Tree a -> Int
+maximize' :: (a -> Float) -> (Float, Float) -> Tree a -> Float
 maximize' mapper _ (Node n []) = mapper n
 maximize' mapper (_, beta) (Node _ sub) = mapmax mapper beta sub
 
-minimize :: (a -> Int) -> Tree a -> Int
-minimize mapper = maximize' mapper (minBound, maxBound)
+minimize :: (a -> Float) -> Tree a -> Float
+minimize mapper = maximize' mapper (-inf, inf)
 
-minimize' :: (a -> Int) -> (Int, Int) -> Tree a -> Int
+minimize' :: (a -> Float) -> (Float, Float) -> Tree a -> Float
 minimize' mapper _ (Node n []) = mapper n
 minimize' mapper (alpha, _) (Node _ sub) = mapmin mapper alpha sub
 
-mapmax :: (a -> Int) -> Int -> Forest a -> Int
-mapmax = mapmax' minBound
+mapmax :: (a -> Float) -> Float-> Forest a -> Float
+mapmax = mapmax' $ -inf
 
-mapmax' :: Int -> (a -> Int) -> Int -> Forest a -> Int
+mapmax' :: Float -> (a -> Float) -> Float -> Forest a -> Float
 mapmax' cmax _ _ [] = cmax
 mapmax' cmax mapper beta forest
     | current <= beta = current
     | otherwise = mapmax' (max current cmax) mapper beta (tail forest)
     where current = minimize' mapper (cmax, beta) (head forest)
 
-mapmin :: (a -> Int) -> Int -> Forest a -> Int
-mapmin = mapmin' maxBound
+mapmin :: (a -> Float) -> Float -> Forest a -> Float
+mapmin = mapmin' inf
 
-mapmin' :: Int -> (a -> Int) -> Int -> Forest a -> Int
+mapmin' :: Float -> (a -> Float) -> Float -> Forest a -> Float
 mapmin' cmin _ _ [] = cmin
 mapmin' cmin mapper alpha forest
     | current >= alpha = current
@@ -62,13 +93,15 @@ mapmin' cmin mapper alpha forest
 countColorFields :: Color -> Int -> Figure -> Int
 countColorFields color acc (_, figureColor) = if color == figureColor then acc + 1 else acc
 
-rateTurn :: Color -> Turn -> Int
+rateTurn :: Color -> Turn -> Float
 rateTurn color (Turn _ _ brd) = maybe 0 (rateBoard color) brd
 
-rateBoard :: Color -> Board -> Int
-rateBoard color brd = let myCount = Board.foldl (countColorFields color) 0 brd
-                          enemyCount = Board.foldl (countColorFields $ opositeColor color) 0 brd
-                      in  myCount - enemyCount
+rateBoard :: Color -> Board -> Float
+rateBoard color brd = Board.foldlWithKey addRate 0 brd
+                      where addRate acc pos fig@(_, currentColor)
+                                | currentColor == color = acc + (getPoints (fig,pos))
+                                | otherwise = acc - (getPoints (fig,pos))
+                            getPoints k = fromMaybe 0 $ Map.lookup k positionsRates
 
 getForestNLevels :: Int -> Forest a -> Forest a
 getForestNLevels n forest = map (getNLevels (n)) forest
