@@ -46,31 +46,35 @@ parsePDN =  try parseMove <|> parseKill
 
 type Game a = IO a
 
-play :: Color -> Board -> String -> Game Board
+play :: Color -> Board -> String -> Game (Maybe Board)
 play color brd i = do
   brd' <- case parse parsePDN "sPDN err" i of
     Right move -> return $ makeMove brd move
     Left x -> fail $ show x
+
   hPutStr stderr $ "Rate: \n" ++ (show (rateBoard color brd'))
   hPutStr stderr $ show $ brd'
+
   turn <- return $ makeBestTurn color brd'
+  move <- return $ fst <$> turn
+  brd'' <- return $ snd <$> turn
 
-  (move, brd'') <- case turn of
-    Just a -> return a
-    Nothing -> fail "End of game"
+  rateStr <- return $ ("Rate: \n" ++) .  show . (rateBoard color) <$> brd''
+  boardStr <- return $ show <$> brd''
+  mapM_ (hPutStr stderr) $ (\a b -> a ++ "\n" ++ b) <$> rateStr <*> boardStr
 
-  hPutStr stderr $ "Rate: \n" ++ (show (rateBoard color brd''))
-  hPutStr stderr $ show $ brd''
-  putStrLn $ show move
+  mapM_ putStrLn $ show <$> move
   hFlush stdout
   return brd''
 
 
-doPlay :: Color -> Board -> Game Board
-doPlay color brd = getLine >>= (play color brd) >>= (doPlay color)
+doPlay :: Color -> Board -> Game ()
+doPlay color brd = do
+    line <- getLine
+    brd' <- play color brd line
+    mapM_ (doPlay color) brd'
 
-
-main :: IO Board
+main :: IO ()
 main = do
   args <- getArgs
   progName <- getProgName
@@ -87,3 +91,4 @@ main = do
           hFlush stdout
           doPlay White brd'
     Nothing -> doPlay Black b
+  return ()
