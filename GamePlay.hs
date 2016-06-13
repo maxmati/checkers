@@ -1,4 +1,4 @@
-module GamePlay (PDN(Move, Kill), makeMove, makeBestTurn) where
+module GamePlay (PDN(Move, Kill), makeMove, makeBestTurn, won) where
 
 import Board
 import Moves
@@ -13,6 +13,9 @@ instance Show PDN where
    show (Kill [p]) = (show p)
    show (Kill (p:ps)) = (show p)++ "x" ++ show (Kill ps)
    show (Kill []) = undefined
+
+won :: Color -> Board -> Bool
+won color board = null $ generateAllValidMoves board $ opositeColor color
 
 makeBestTurn :: Color -> Board -> Maybe (PDN, Board)
 makeBestTurn color brd = turnToIdBoard <$> getBestTurn color brd

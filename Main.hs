@@ -48,45 +48,44 @@ type Game a = IO a
 
 play :: Color -> Board -> String -> Game (Maybe Board)
 play color brd i = do
-  brd' <- case parse parsePDN "sPDN err" i of
-    Right move -> return $ makeMove brd move
-    Left x -> fail $ show x
+    brd' <- case parse parsePDN "sPDN err" i of
+        Right move -> return $ makeMove brd move
+        Left x -> fail $ show x
 
-  hPutStr stderr $ "Rate: \n" ++ (show (rateBoard color brd'))
-  hPutStr stderr $ show $ brd'
+    hPutStr stderr $ "Rate: \n" ++ (show (rateBoard color brd'))
+    hPutStr stderr $ show $ brd'
 
-  turn <- return $ makeBestTurn color brd'
-  move <- return $ fst <$> turn
-  brd'' <- return $ snd <$> turn
+    turn <- return $ makeBestTurn color brd'
+    move <- return $ fst <$> turn
+    brd'' <- return $ snd <$> turn
 
-  rateStr <- return $ ("Rate: \n" ++) .  show . (rateBoard color) <$> brd''
-  boardStr <- return $ show <$> brd''
-  mapM_ (hPutStr stderr) $ (\a b -> a ++ "\n" ++ b) <$> rateStr <*> boardStr
+    rateStr <- return $ ("Rate: \n" ++) .  show . (rateBoard color) <$> brd''
+    boardStr <- return $ show <$> brd''
+    mapM_ (hPutStr stderr) $ (\a b -> a ++ "\n" ++ b) <$> rateStr <*> boardStr
 
-  mapM_ putStrLn $ show <$> move
-  hFlush stdout
-  return brd''
-
+    mapM_ putStrLn $ show <$> move
+    hFlush stdout
+    return brd''
 
 doPlay :: Color -> Board -> Game ()
-doPlay color brd = do
-    line <- getLine
-    brd' <- play color brd line
-    mapM_ (doPlay color) brd'
+doPlay color brd
+    | won color brd = return ()
+    | otherwise = do
+        line <- getLine
+        brd' <- play color brd line
+        mapM_ (doPlay color) brd'
 
 main :: IO ()
 main = do
   args <- getArgs
-  progName <- getProgName
+--  progName <- getProgName
 --  mapM_ putStrLn args
 --  putStrLn progName
 --  let args = ["w"] -- do zakomentowania w programmie
   case (listToMaybe args) of
     Just "b" -> doPlay Black b
     Just "w" -> do
---          putStr $ show b
           (move, brd') <- return $ fromJust $ makeBestTurn White b
---          putStr $ show brd'
           putStrLn $ show $ move
           hFlush stdout
           doPlay White brd'
