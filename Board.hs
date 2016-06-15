@@ -22,14 +22,14 @@ b2 :: Board
 b2 = stringToBoard "...b.b.b\nw.b.b.b.\n.b.b...b\n....b...\n........\nw.w.b.w.\n.w.w...w\nw.w.w.b."
 
 b3 :: Board
-b3 = (stringToBoard . unlines) ["...W.b..",
-                                "b.......",
+b3 = (stringToBoard . unlines) ["B......",
                                 "........",
-                                "..B.....",
-                                ".w.b....",
-                                "....b...",
-                                ".w......",
-                                "w...B..."]
+                                "..w.....",
+                                "........",
+                                "........",
+                                "...w....",
+                                "........",
+                                "........"]
 
 b4 :: Board
 b4 = (stringToBoard . unlines) ["...W.b..",

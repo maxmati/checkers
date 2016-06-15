@@ -78,25 +78,27 @@ addKingMultiJumps color brd turn
           addMove (Turn jump moves _) pos = Turn jump (moves ++ [Move from pos]) Nothing
           addMoves = map (addMove turn)
           brd' = makeTurnLast brd turn
-          aviableJumps = concatMap ((removeInvalidKingMoves True color brd'). addMoves . (generateKingMovesPos from)) dirs
+          aviableJumps = concatMap ((removeInvalidKingMoves False True color brd'). addMoves . (generateKingMovesPos from)) dirs
 
 getLastMove :: Turn -> Move
 getLastMove (Turn _ moves _) = last moves
 
-removeInvalidKingMoves :: Bool -> Color -> Board -> [Turn] -> [Turn]
-removeInvalidKingMoves _ _ _ [] = []
-removeInvalidKingMoves reqJump color brd (pos:rest)
+removeInvalidKingMoves :: Bool -> Bool -> Color -> Board -> [Turn] -> [Turn]
+removeInvalidKingMoves _ _ _ _ [] = []
+removeInvalidKingMoves prewentJump reqJump color brd (pos:rest)
     | isNothing fig && reqJump = [] -- req jump and nothin to jump
-    | isNothing fig = [pos] ++ removeInvalidKingMoves reqJump color brd rest -- standard jump
+    | isNothing fig && prewentJump = (addKingMultiJumps color brd $ setJump $ pos) ++ (removeInvalidKingMoves True False color brd rest) -- fields after jump
+    | isNothing fig = [pos] ++ removeInvalidKingMoves False reqJump color brd rest -- standard step
     | (getColor $ fromJust fig) == color = [] -- field occupied so other blocked
     | null rest = [] -- border of board
-    | otherwise = if isNothing $ Board.lookup (getLastTarget (head rest)) brd then addKingMultiJumps color brd $ setJump $ head rest else [] -- fig to jump over
+    | prewentJump = []
+    | otherwise = if isNothing $ Board.lookup (getLastTarget (head rest)) brd then (addKingMultiJumps color brd $ setJump $ head rest) ++ (removeInvalidKingMoves True False color brd (tail rest)) else [] -- fig to jump over
     where fig = Board.lookup (getLastTarget pos) brd
           getLastTarget turn = getTo $ getLastMove turn
           setJump (Turn _ moves brd') = Turn True moves brd'
 
 generateKingMoves :: Color -> Board -> Pos -> [Turn]
-generateKingMoves color brd pos = concatMap ((removeInvalidKingMoves False color brd) . createTurns . (generateKingMovesPos pos)) dirs
+generateKingMoves color brd pos = concatMap ((removeInvalidKingMoves False False color brd) . createTurns . (generateKingMovesPos pos)) dirs
                                   where dirs = [NE, SE, SW, NW]
                                         createTurns poses = map (createTurn pos) poses
 
