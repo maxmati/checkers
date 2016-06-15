@@ -12,14 +12,14 @@ import Data.Foldable
 
 
 listBlackPawn :: [[Float]]
-listBlackPawn = [[4, 4, 4, 4, 4, 4, 4, 4],
-                 [4, 3, 3, 3, 3, 3, 3, 4],
-                 [4, 3, 2, 2, 2, 2, 3, 4],
-                 [4, 3, 2, 1, 1, 2, 3, 4],
-                 [4, 3, 2, 1, 1, 2, 3, 4],
-                 [4, 3, 2, 2, 2, 2, 3, 4],
-                 [4, 3, 3, 3, 3, 3, 3, 4],
-                 [4, 4, 4, 4, 4, 4, 4, 4]]
+listBlackPawn = [[4*0.7, 4*0.7, 4*0.7, 4*0.7, 4*0.7, 4*0.7, 4*0.7, 4*0.7],
+                 [4*0.8, 3*0.8, 3*0.8, 3*0.8, 3*0.8, 3*0.8, 3*0.8, 4*0.8],
+                 [4*0.9, 3*0.9, 2*0.9, 2*0.9, 2*0.9, 2*0.9, 3*0.9, 4*0.9],
+                 [4*1.0, 3*1.0, 2*1.0, 1*1.0, 1*1.0, 2*1.0, 3*1.0, 4*1.0],
+                 [4*1.1, 3*1.1, 2*1.1, 1*1.1, 1*1.1, 2*1.1, 3*1.1, 4*1.1],
+                 [4*1.2, 3*1.2, 2*1.2, 2*1.2, 2*1.2, 2*1.2, 3*1.2, 4*1.2],
+                 [4*1.3, 3*1.3, 3*1.3, 3*1.3, 3*1.3, 3*1.3, 3*1.3, 4*1.3],
+                 [4*1.4, 4*1.4, 4*1.4, 4*1.4, 4*1.4, 4*1.4, 4*1.4, 4*1.4]]
 listWhitePawn :: [[Float]]
 listWhitePawn = reverse listBlackPawn
 listBlackKing :: [[Float]]
@@ -42,7 +42,7 @@ getBestTurn :: Color -> Board -> Maybe Turn
 getBestTurn color brd
     | null movesForest = Nothing
     | otherwise = Just $ snd bestMove
-    where movesForest = getForestNLevels 7 $ generateMovesTree color brd
+    where movesForest = getForestNLevels 9 $ generateMovesTree color brd
           posibleMoves = forestToList movesForest
           movesScores = map (minimize (rateTurn color)) movesForest
           bestMove = maximumBy (comparing fst) $ zip movesScores posibleMoves
@@ -65,6 +65,17 @@ minimise :: (a -> Float) -> Tree a -> Float
 minimise mapper (Node element []) = mapper element
 minimise mapper (Node _ sub) = minimum $ map (maximise mapper) sub
 
+
+minleq :: (Ord a) => a -> [a] -> Bool
+minleq _ [] = False
+minleq n (y:ys) | y <= n = True
+                | otherwise = minleq n ys
+
+maxleq :: (Ord a) => a -> [a] -> Bool
+maxleq _ [] = False
+maxleq n (y:ys) | y >= n = True
+                | otherwise = maxleq n ys
+
 maximize :: (a -> Float) -> Tree a -> Float
 maximize mapper = maximum . (maximize' mapper)
 
@@ -76,8 +87,8 @@ maximize' mapper (Node _ sub) = mapmin $ map (minimize' mapper) sub
                                                            where minVal = minimum nums
                                       omit _ [] = []
                                       omit pot (nums:rest)
-                                          | minVal <= pot = omit pot rest
-                                          | otherwise = [minVal] ++ omit (minVal) rest
+                                          | minleq pot nums = omit pot rest
+                                          | otherwise = minVal : omit (minVal) rest
                                           where minVal = minimum nums
 
 minimize :: (a -> Float) -> Tree a  -> Float
@@ -92,7 +103,7 @@ minimize' mapper (Node _ sub) = mapmax $ map (maximize' mapper) sub
                                                            where maxVal = maximum nums
                                       omit _ [] = []
                                       omit pot (nums:rest)
-                                          | maxVal >= pot = omit pot rest
+                                          | maxleq pot nums = omit pot rest
                                           | otherwise = [maxVal] ++ omit (maxVal) rest
                                           where maxVal = maximum nums
 
