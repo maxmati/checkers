@@ -12,20 +12,20 @@ import Data.Foldable
 
 
 listBlackPawn :: [[Float]]
-listBlackPawn = [[0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7],
-                 [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7],
-                 [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7],
-                 [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8],
-                 [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9],
-                 [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-                 [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
-                 [1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7]]
+listBlackPawn = [[4, 4, 4, 4, 4, 4, 4, 4],
+                 [4, 3, 3, 3, 3, 3, 3, 4],
+                 [4, 3, 2, 2, 2, 2, 3, 4],
+                 [4, 3, 2, 1, 1, 2, 3, 4],
+                 [4, 3, 2, 1, 1, 2, 3, 4],
+                 [4, 3, 2, 2, 2, 2, 3, 4],
+                 [4, 3, 3, 3, 3, 3, 3, 4],
+                 [4, 4, 4, 4, 4, 4, 4, 4]]
 listWhitePawn :: [[Float]]
 listWhitePawn = reverse listBlackPawn
 listBlackKing :: [[Float]]
-listBlackKing = [[2 | x <- [0..7]] | y <- [0..7]]
+listBlackKing = fmap (fmap (3*)) listBlackPawn
 listWhiteKing :: [[Float]]
-listWhiteKing = [[2 | x <- [0..7]] | y <- [0..7]]
+listWhiteKing = fmap (fmap (3*)) listWhitePawn
 
 convertList :: Figure -> [[Float]] -> [((Figure, Pos), Float)]
 convertList fig list = map toItem [(x,y) | x <- [1..8], y <- [1..8]]
@@ -57,39 +57,45 @@ generateMovesTree color board = let updateBoard = generateAndSetBoard board
                                     createNode move = Node move (generateMovesTree nextColor $ getBoard move)
                                 in  map createNode nextTurn
 
+maximise :: (a -> Float) -> Tree a -> Float
+maximise mapper (Node element []) = mapper element
+maximise mapper (Node _ sub) = maximum $ map (minimise mapper) sub
+
+minimise :: (a -> Float) -> Tree a -> Float
+minimise mapper (Node element []) = mapper element
+minimise mapper (Node _ sub) = minimum $ map (maximise mapper) sub
+
 maximize :: (a -> Float) -> Tree a -> Float
-maximize mapper = maximize' mapper (-inf, inf)
+maximize mapper = maximum . (maximize' mapper)
 
-maximize' :: (a -> Float) -> (Float, Float) -> Tree a -> Float
-maximize' mapper _ (Node n []) = mapper n
-maximize' mapper (_, beta) (Node _ sub) = mapmax mapper beta sub
+maximize' :: (a -> Float) -> Tree a -> [Float]
+maximize' mapper (Node a [])= [mapper a]
+maximize' mapper (Node _ sub) = mapmin $ map (minimize' mapper) sub
+                                where mapmin [] = []
+                                      mapmin (nums:rest) = [minVal] ++ omit (minVal) rest
+                                                           where minVal = minimum nums
+                                      omit _ [] = []
+                                      omit pot (nums:rest)
+                                          | minVal <= pot = omit pot rest
+                                          | otherwise = [minVal] ++ omit (minVal) rest
+                                          where minVal = minimum nums
 
-minimize :: (a -> Float) -> Tree a -> Float
-minimize mapper = maximize' mapper (-inf, inf)
+minimize :: (a -> Float) -> Tree a  -> Float
+minimize mapper = minimum . (minimize' mapper)
 
-minimize' :: (a -> Float) -> (Float, Float) -> Tree a -> Float
-minimize' mapper _ (Node n []) = mapper n
-minimize' mapper (alpha, _) (Node _ sub) = mapmin mapper alpha sub
 
-mapmax :: (a -> Float) -> Float-> Forest a -> Float
-mapmax = mapmax' $ -inf
+minimize' :: (a -> Float) -> Tree a -> [Float]
+minimize' mapper (Node a [])= [mapper a]
+minimize' mapper (Node _ sub) = mapmax $ map (maximize' mapper) sub
+                                where mapmax [] = []
+                                      mapmax (nums:rest) = [maxVal] ++ omit (maxVal) rest
+                                                           where maxVal = maximum nums
+                                      omit _ [] = []
+                                      omit pot (nums:rest)
+                                          | maxVal >= pot = omit pot rest
+                                          | otherwise = [maxVal] ++ omit (maxVal) rest
+                                          where maxVal = maximum nums
 
-mapmax' :: Float -> (a -> Float) -> Float -> Forest a -> Float
-mapmax' cmax _ _ [] = cmax
-mapmax' cmax mapper beta forest
-    | current <= beta = current
-    | otherwise = mapmax' (max current cmax) mapper beta (tail forest)
-    where current = minimize' mapper (cmax, beta) (head forest)
-
-mapmin :: (a -> Float) -> Float -> Forest a -> Float
-mapmin = mapmin' inf
-
-mapmin' :: Float -> (a -> Float) -> Float -> Forest a -> Float
-mapmin' cmin _ _ [] = cmin
-mapmin' cmin mapper alpha forest
-    | current >= alpha = current
-    | otherwise = mapmin' (min current cmin) mapper alpha (tail forest)
-    where current = maximize' mapper (alpha, cmin) (head forest)
 
 rateTurn :: Color -> Turn -> Float
 rateTurn color (Turn _ _ brd) = maybe 0 (rateBoard color) brd
